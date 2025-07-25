@@ -1,0 +1,31 @@
+# Virtual environments
+envjarvis/
+venv/
+.env  # <-- This hides your secrets
+
+# Database
+jarvis.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Engine-specific
+engine/__pycache__/
+engine/cookies.json
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+*.tmp
+
+
+#author
+
+engine/auth/
+
+/contacts.csv
