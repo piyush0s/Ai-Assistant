@@ -198,6 +198,97 @@ def sendMessage(message, mobileNo, name):
     tapEvents(980, 2150)
     speak("Message sent successfully to " + name)
 
+import os
+
+def open_app(app_name):
+    apps = {
+    # Social & Communication
+    "whatsapp": "com.whatsapp",
+    "linkedin": "com.linkedin.android",
+    "instagram": "com.instagram.android",
+    "telegram": "org.telegram.messenger",
+    "facebook": "com.facebook.katana",
+    "messenger": "com.facebook.orca",
+    "twitter": "com.twitter.android",
+    "gmail": "com.google.android.gm",
+    "messages": "com.google.android.apps.messaging",
+    "snapchat": "com.snapchat.android",
+
+    # Entertainment & Media
+    "youtube": "com.google.android.youtube",
+    "youtube music": "com.google.android.apps.youtube.music",
+    "spotify": "com.spotify.music",
+    "netflix": "com.netflix.mediaclient",
+    "mx player": "com.mxtech.videoplayer.ad",
+    "hotstar": "in.startv.hotstar",
+    "prime video": "com.amazon.avod.thirdpartyclient",
+
+    # AI & Tools
+    "chatgpt": "com.openai.chatgpt",
+    "gemini": "com.google.android.apps.bard",
+    "notion": "notion.id",
+    "zomato": "com.application.zomato",
+    "amazon": "in.amazon.mShop.android.shopping",
+    "flipkart": "com.flipkart.android",
+    "paytm": "net.one97.paytm",
+    "phonepe": "com.phonepe.app",
+    "camera": "com.android.camera",
+    "calculator": "com.android.calculator2",
+    "files": "com.google.android.apps.nbu.files",
+    "settings": "com.android.settings",
+
+    # Google & Browsing
+    "chrome": "com.android.chrome",
+    "google": "com.google.android.googlequicksearchbox",
+    "photos": "com.google.android.apps.photos",
+    "maps": "com.google.android.apps.maps",
+    "calendar": "com.google.android.calendar",
+    "drive": "com.google.android.apps.docs",
+    "play store": "com.android.vending",
+}
+
+
+    if app_name in apps:
+        package = apps[app_name]
+        os.system(f"adb shell monkey -p {package} -c android.intent.category.LAUNCHER 1")
+    else:
+        print(f"App '{app_name}' not configured.")
+
+def go_home():
+    os.system("adb shell input keyevent 3")
+    
+def search_in_chrome(query):
+    search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
+    os.system(f'adb shell am start -a android.intent.action.VIEW -d "{search_url}" com.android.chrome')
+
+def take_screenshot():
+    os.system("adb shell screencap -p /sdcard/screen.png")
+    os.system("adb pull /sdcard/screen.png ./screen.png")
+
+def increase_volume():
+    os.system("adb shell input keyevent 24")
+
+def decrease_volume():
+    os.system("adb shell input keyevent 25")
+
+def open_settings():
+    os.system("adb shell am start -a android.settings.SETTINGS")
+
+def toggle_wifi():
+    os.system("adb shell svc wifi enable")  # or disable
+
+def toggle_bluetooth():
+    os.system("adb shell service call bluetooth_manager 6")  # Toggle state
+
+def play_pause_music():
+    os.system("adb shell input keyevent 85")
+
+def next_song():
+    os.system("adb shell input keyevent 87")
+
+def previous_song():
+    os.system("adb shell input keyevent 88")
+
 # Password Generator
 def createPassword(length=12, copy_to_clipboard=True):
     length = max(6, length)
