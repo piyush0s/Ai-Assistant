@@ -2,20 +2,17 @@ import pyttsx3
 import speech_recognition as sr
 import eel
 import time
-from engine.features import apps, open_app, search_in_chrome, go_home, take_screenshot, increase_volume, decrease_volume, toggle_wifi, toggle_bluetooth, play_pause_music, next_song
-
 
 def speak(text):
     text = str(text)
     engine = pyttsx3.init('sapi5')
-    voices = engine.getProperty('voices')
+    voices = engine.getProperty('voices') 
     engine.setProperty('voice', voices[0].id)
     engine.setProperty('rate', 174)
     eel.DisplayMessage(text)
     engine.say(text)
     eel.receiverText(text)
     engine.runAndWait()
-
 
 def takecommand():
     r = sr.Recognizer()
@@ -33,21 +30,23 @@ def takecommand():
         print(f"user said: {query}")
         eel.DisplayMessage(query)
         time.sleep(2)
-    except Exception:
+    except Exception as e:
         return ""
     return query.lower()
-
 
 @eel.expose
 def allCommands(message=1):
     if message == 1:
         query = takecommand()
+        print(query)
         eel.senderText(query)
     else:
-        query = message.lower()
+        query = message
         eel.senderText(query)
 
     try:
+         
+        
         if "open" in query:
             from engine.features import openCommand
             openCommand(query)
@@ -104,48 +103,20 @@ def allCommands(message=1):
         elif "news" in query:
             from engine.features import getNews
             getNews()
-
         elif "book a cab" in query or "book a ride" in query:
             from engine.features import book_cab
             book_cab(query)
 
-        # Mobile app control
-        for app in apps:
-            if f"open {app} on mobile" in query:
-                open_app(app)
-                break
-
-        if "search" in query and "in chrome on mobile" in query:
-            query_text = query.replace("search", "").replace("in chrome on mobile", "").strip()
-            search_in_chrome(query_text)
-
-        elif "home screen of mobile" in query:
-            go_home()
-        elif "volume up" in query:
-            from engine.features import increase_volume
-            increase_volume()
-        elif "volume down" in query:
-            decrease_volume()
-        elif "wifi on" in query:
-            toggle_wifi()
-        elif "bluetooth toggle" in query:
-            toggle_bluetooth()
-        elif "next song" in query:
-            next_song()
-        elif "pause music " in query:
-            play_pause_music()
-        elif "open camera on mobile" in query:
-            open_app("camera")
-
         elif "send message" in query or "phone call" in query or "video call" in query:
             from engine.features import findContact, whatsApp, makeCall, sendMessage
             contact_no, name = findContact(query)
-            if contact_no:
+            if(contact_no != 0):
                 speak("Which mode you want to use whatsapp or mobile")
                 preferance = takecommand()
+                print(preferance)
 
                 if "mobile" in preferance:
-                    if "send message" in query or "send sms" in query:
+                    if "send message" in query or "send sms" in query: 
                         speak("what message to send")
                         message = takecommand()
                         sendMessage(message, contact_no, name)
@@ -169,7 +140,7 @@ def allCommands(message=1):
             from engine.features import chatBot
             chatBot(query)
 
-    except Exception as e:
-        print("error:", e)
+    except:
+        print("error")
 
     eel.ShowHood()

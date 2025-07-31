@@ -23,6 +23,7 @@ Thumbs.db
 *.log
 *.tmp
 
+engine/.env
 
 #author
 

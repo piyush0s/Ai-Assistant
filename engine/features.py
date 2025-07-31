@@ -23,284 +23,258 @@ import pvporcupine
 from playsound import playsound
 from geopy.geocoders import Nominatim
 import pywhatkit as kit
-from dotenv import load_dotenv
-load_dotenv()
-import os
 
+import os
+from engine.helper import extract_yt_term, remove_words
 from engine.command import speak
 from engine.config import ASSISTANT_NAME
-from engine.helper import extract_yt_term, remove_words, replace_spaces_with_percent_s, goback, keyEvent, tapEvents, adbInput
 
-# Database connection
+
+
 con = sqlite3.connect("jarvis.db")
 cursor = con.cursor()
 
-# Exposed eel function
 @eel.expose
 def playAssistantSound():
-    playsound("www/assets/audio/game-start-317318.mp3")
+    music_dir = "www\\assets\\audio\\game-start-317318.mp3"
+    playsound(music_dir)
 
-# Listen function
 
-def listen():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        audio = recognizer.listen(source)
-        try:
-            return recognizer.recognize_google(audio)
-        except sr.UnknownValueError:
-            speak("Sorry, I didn't catch that.")
-        except sr.RequestError:
-            speak("Speech recognition service is unavailable.")
-        return ""
 
-# App launcher
+
+
+
 def openCommand(query):
-    query = query.replace(ASSISTANT_NAME, "").replace("open", "").strip().lower()
-    try:
-        cursor.execute('SELECT path FROM sys_command WHERE name = ?', (query,))
-        result = cursor.fetchone()
-        if result:
-            speak("Opening " + query)
-            os.startfile(result[0])
-            return
+    query = query.replace(ASSISTANT_NAME, "")
+    query = query.replace("open", "")
+    query.lower()
 
-        cursor.execute('SELECT url FROM web_command WHERE name = ?', (query,))
-        result = cursor.fetchone()
-        if result:
-            speak("Opening " + query)
-            webbrowser.open(result[0])
-            return
+    app_name = query.strip()
 
-        speak("Opening " + query)
-        os.system('start ' + query)
-    except:
-        speak("Something went wrong while trying to open it.")
+    if app_name != "":
 
-# YouTube
+        try:
+            cursor.execute(
+                'SELECT path FROM sys_command WHERE name IN (?)', (app_name,))
+            results = cursor.fetchall()
+
+            if len(results) != 0:
+                speak("Opening "+query)
+                os.startfile(results[0][0])
+
+            elif len(results) == 0: 
+                cursor.execute(
+                'SELECT url FROM web_command WHERE name IN (?)', (app_name,))
+                results = cursor.fetchall()
+                
+                if len(results) != 0:
+                    speak("Opening "+query)
+                    webbrowser.open(results[0][0])
+
+                else:
+                    speak("Opening "+query)
+                    try:
+                        os.system('start '+query)
+                    except:
+                        speak("not found")
+        except:
+            speak("some thing went wrong")
+
+       
 
 def PlayYoutube(query):
     search_term = extract_yt_term(query)
-    speak("Playing " + search_term + " on YouTube")
+    speak("Playing "+search_term+" on YouTube")
     kit.playonyt(search_term)
 
-# Hotword detection
+
 def hotword():
-    porcupine = None
-    paud = None
-    audio_stream = None
+    porcupine=None
+    paud=None
+    audio_stream=None
     try:
-        porcupine = pvporcupine.create(keywords=["jarvis", "alexa"])
-        paud = pyaudio.PyAudio()
-        audio_stream = paud.open(rate=porcupine.sample_rate, channels=1, format=pyaudio.paInt16, input=True, frames_per_buffer=porcupine.frame_length)
+       
+        # pre trained keywords    
+        porcupine=pvporcupine.create(keywords=["jarvis","alexa"]) 
+        paud=pyaudio.PyAudio()
+        audio_stream=paud.open(rate=porcupine.sample_rate,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=porcupine.frame_length)
+        
+        # loop for streaming
         while True:
-            keyword = audio_stream.read(porcupine.frame_length)
-            keyword = struct.unpack_from("h" * porcupine.frame_length, keyword)
-            if porcupine.process(keyword) >= 0:
-                pyautogui.keyDown("win")
-                pyautogui.press("j")
+            keyword=audio_stream.read(porcupine.frame_length)
+            keyword=struct.unpack_from("h"*porcupine.frame_length,keyword)
+
+            # processing keyword comes from mic 
+            keyword_index=porcupine.process(keyword)
+
+            # checking first keyword detetcted for not
+            if keyword_index>=0:
+                print("hotword detected")
+
+                # pressing shorcut key win+j
+                import pyautogui as autogui
+                autogui.keyDown("win")
+                autogui.press("j")
                 time.sleep(2)
-                pyautogui.keyUp("win")
+                autogui.keyUp("win")
+                
     except:
-        speak("Error with hotword detection")
-    finally:
-        if porcupine:
+        if porcupine is not None:
             porcupine.delete()
-        if audio_stream:
+        if audio_stream is not None:
             audio_stream.close()
-        if paud:
+        if paud is not None:
             paud.terminate()
 
-# Contact Finder
-def findContact(query):
-    query = remove_words(query, [ASSISTANT_NAME, 'make', 'a', 'to', 'phone', 'call', 'send', 'message', 'wahtsapp', 'video']).strip().lower()
-    try:
-        cursor.execute("SELECT mobile_no FROM contacts WHERE LOWER(name) LIKE ? OR LOWER(name) LIKE ?", ('%' + query + '%', query + '%'))
-        result = cursor.fetchone()
-        if result:
-            mobile = result[0]
-            return ('+91' + mobile if not mobile.startswith('+91') else mobile), query
-    except:
-        pass
-    speak('Not found in contacts')
-    return 0, 0
 
-# WhatsApp communication
+
+# find contacts
+def findContact(query):
+    
+    words_to_remove = [ASSISTANT_NAME, 'make', 'a', 'to', 'phone', 'call', 'send', 'message', 'wahtsapp', 'video']
+    query = remove_words(query, words_to_remove)
+
+    try:
+        query = query.strip().lower()
+        cursor.execute("SELECT mobile_no FROM contacts WHERE LOWER(name) LIKE ? OR LOWER(name) LIKE ?", ('%' + query + '%', query + '%'))
+        results = cursor.fetchall()
+        print(results[0][0])
+        mobile_number_str = str(results[0][0])
+
+        if not mobile_number_str.startswith('+91'):
+            mobile_number_str = '+91' + mobile_number_str
+
+        return mobile_number_str, query
+    except:
+        speak('not exist in contacts')
+        return 0, 0
+    
 def whatsApp(mobile_no, message, flag, name):
-    tab_map = {'message': 17, 'call': 13, 'video': 12}
-    tab_count = tab_map.get(flag, 17)
+    import time
+    import pyautogui
+    
     jarvis_message = {
         'message': f"Message sent successfully to {name}",
         'call': f"Calling {name}",
         'video': f"Starting video call with {name}"
-    }.get(flag, "Action done")
+    }.get(flag, "Action completed")
 
-    encoded_msg = urllib.parse.quote(message)
-    url = f"whatsapp://send?phone={mobile_no}&text={encoded_msg}"
-    subprocess.run(f'start "" "{url}"', shell=True)
+    try:
+        speak(f"Opening WhatsApp for {name}")
+        
+        # Use Ctrl+F to search (more reliable)
+        pyautogui.hotkey('ctrl', 'f')
+        time.sleep(0.5)
+        
+        # Clear search and type name
+        pyautogui.hotkey('ctrl', 'a')
+        pyautogui.write(name)
+        time.sleep(1)
+        pyautogui.press('enter')  # Select contact
+        time.sleep(1)
+        
+        if flag == 'message':
+            # Press Tab to go to message input (usually 1-2 tabs from search)
+            pyautogui.press('tab')  # Move to chat area
+            time.sleep(0.2)
+            pyautogui.press('tab')  # Move to message input
+            time.sleep(0.2)
+            
+            pyautogui.write(message)
+            pyautogui.press('enter')
+            speak(jarvis_message)
+            
+        elif flag == 'call':
+            # Navigate to call button (usually Shift+Tab from message input)
+            pyautogui.hotkey('shift', 'tab')  # Go backwards to header
+            time.sleep(0.2)
+            pyautogui.hotkey('shift', 'tab')
+            time.sleep(0.2)
+            pyautogui.press('enter')  # Click call button
+            speak(jarvis_message)
+            
+        elif flag == 'video':
+            # Navigate to video call button
+            pyautogui.hotkey('shift', 'tab')  # Go to header area
+            time.sleep(0.2)
+            pyautogui.press('tab')  # Move to video call
+            time.sleep(0.2)
+            pyautogui.press('enter')
+            speak(jarvis_message)
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        speak(f"Failed to complete WhatsApp {flag}")
 
-    time.sleep(5)
-    pyautogui.hotkey('ctrl', 'f')
-    time.sleep(1)
-    for _ in range(tab_count):
-        pyautogui.press('tab')
-        time.sleep(0.05)
-    pyautogui.press('enter')
-    if flag == 'message':
-        pyautogui.write(message)
-        pyautogui.press('enter')
-    speak(jarvis_message)
-
-# OpenRouter ChatBot
-import openai
+# chat bot 
+from groq import Groq
 from dotenv import load_dotenv
-load_dotenv()
 import os
-openai.api_key = os.getenv("OPENROUTER_API_KEY")
-openai.api_base = "https://openrouter.ai/api/v1"
+from engine.config import ASSISTANT_NAME
+
+# Load environment variables
+load_dotenv()
+
+# Set up Groq client
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
 
 def chatBot(query):
-    response = openai.ChatCompletion.create(
-        model="meta-llama/llama-3-8b-instruct",
-        messages=[{"role": "system", "content": "You are a helpful assistant."},
-                  {"role": "user", "content": query}]
-    )
-    reply = response['choices'][0]['message']['content']
-    print(reply)
-    speak(reply)
-    return reply
+    try:
+        # Groq API call
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",  # or "mixtral-8x7b-32768" or "llama3-70b-8192"
+            messages=[
+                {"role": "system", "content": f"You are {ASSISTANT_NAME}, a helpful AI assistant."},
+                {"role": "user", "content": query}
+            ],
+            temperature=0.7,
+            max_tokens=1024,
+            top_p=1,
+            stream=False
+        )
+        
+        reply = response.choices[0].message.content
+        print(reply)
+        speak(reply)
+        eel.DisplayMessage(reply)  # Assuming eel is used for UI
+        return reply
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+# android automation
 
-# Mobile Calls and SMS (ADB)
 def makeCall(name, mobileNo):
-    speak("Calling " + name)
-    os.system(f'adb shell am start -a android.intent.action.CALL -d tel:{mobileNo.strip()}')
-
-def sendMessage(message, mobileNo, name):
-    message = replace_spaces_with_percent_s(message)
-    mobileNo = replace_spaces_with_percent_s(mobileNo)
-    speak("Sending message")
-    goback(4)
-    time.sleep(1)
-    keyEvent(3)
-    time.sleep(1)
-    tapEvents(540, 2220)
-    time.sleep(1)
-    tapEvents(950, 1800)
-    time.sleep(1)
-    adbInput(mobileNo)
-    time.sleep(1)
-    tapEvents(500, 600)
-    time.sleep(1)
-    tapEvents(500, 2200)
-    time.sleep(1)
-    adbInput(message)
-    time.sleep(1)
-    tapEvents(980, 2150)
-    speak("Message sent successfully to " + name)
-
-import os
-
-def open_app(app_name):
-    apps = {
-    # Social & Communication
-    "whatsapp": "com.whatsapp",
-    "linkedin": "com.linkedin.android",
-    "instagram": "com.instagram.android",
-    "telegram": "org.telegram.messenger",
-    "facebook": "com.facebook.katana",
-    "messenger": "com.facebook.orca",
-    "twitter": "com.twitter.android",
-    "gmail": "com.google.android.gm",
-    "messages": "com.google.android.apps.messaging",
-    "snapchat": "com.snapchat.android",
-
-    # Entertainment & Media
-    "youtube": "com.google.android.youtube",
-    "youtube music": "com.google.android.apps.youtube.music",
-    "spotify": "com.spotify.music",
-    "netflix": "com.netflix.mediaclient",
-    "mx player": "com.mxtech.videoplayer.ad",
-    "hotstar": "in.startv.hotstar",
-    "prime video": "com.amazon.avod.thirdpartyclient",
-
-    # AI & Tools
-    "chatgpt": "com.openai.chatgpt",
-    "gemini": "com.google.android.apps.bard",
-    "notion": "notion.id",
-    "zomato": "com.application.zomato",
-    "amazon": "in.amazon.mShop.android.shopping",
-    "flipkart": "com.flipkart.android",
-    "paytm": "net.one97.paytm",
-    "phonepe": "com.phonepe.app",
-    "camera": "com.android.camera",
-    "calculator": "com.android.calculator2",
-    "files": "com.google.android.apps.nbu.files",
-    "settings": "com.android.settings",
-
-    # Google & Browsing
-    "chrome": "com.android.chrome",
-    "google": "com.google.android.googlequicksearchbox",
-    "photos": "com.google.android.apps.photos",
-    "maps": "com.google.android.apps.maps",
-    "calendar": "com.google.android.calendar",
-    "drive": "com.google.android.apps.docs",
-    "play store": "com.android.vending",
-}
-
-
-    if app_name in apps:
-        package = apps[app_name]
-        os.system(f"adb shell monkey -p {package} -c android.intent.category.LAUNCHER 1")
-    else:
-        print(f"App '{app_name}' not configured.")
-
-def go_home():
-    os.system("adb shell input keyevent 3")
+    mobileNo = mobileNo.replace(" ", "")
+    speak("Opening dialer for " + name)
     
-def search_in_chrome(query):
-    search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
-    os.system(f'adb shell am start -a android.intent.action.VIEW -d "{search_url}" com.android.chrome')
+    # Use ACTION_DIAL instead - no permission required
+    command = 'adb shell am start -a android.intent.action.DIAL -d tel:' + mobileNo
+    os.system(command)
 
-def take_screenshot():
-    os.system("adb shell screencap -p /sdcard/screen.png")
-    os.system("adb pull /sdcard/screen.png ./screen.png")
 
-def increase_volume():
-    os.system("adb shell input keyevent 24")
+# to send message
+def sendMessage(message, mobileNo, name):
+    speak("Sending message to " + name)
+    
+    # Clean the mobile number
+    mobileNo = mobileNo.replace(" ", "").replace("-", "")
+    
+    # Use SMS intent - works with any SMS app
+    command = f'adb shell am start -a android.intent.action.SENDTO -d sms:{mobileNo} --es sms_body "{message}"'
+    
+    result = os.system(command)
+    
+    if result == 0:
+        speak(f"Message prepared for {name}. Please tap send.")
+    else:
+        speak("Failed to open messaging app")
 
-def decrease_volume():
-    os.system("adb shell input keyevent 25")
 
-def open_settings():
-    os.system("adb shell am start -a android.settings.SETTINGS")
 
-def toggle_wifi():
-    os.system("adb shell svc wifi enable")  # or disable
-
-def toggle_bluetooth():
-    os.system("adb shell service call bluetooth_manager 6")  # Toggle state
-
-def play_pause_music():
-    os.system("adb shell input keyevent 85")
-
-def next_song():
-    os.system("adb shell input keyevent 87")
-
-def previous_song():
-    os.system("adb shell input keyevent 88")
-
-# Password Generator
-def createPassword(length=12, copy_to_clipboard=True):
-    length = max(6, length)
-    chars = string.ascii_letters + string.digits + string.punctuation
-    password = ''.join(random.choice(chars) for _ in range(length))
-    if copy_to_clipboard:
-        pyperclip.copy(password)
-    speak("Here is your password")
-    print(f"Generated Password: {password}")
-    return password
-
-# Spotify
 
 def playSpotifySong(query):
     song_name = remove_words(query, [ASSISTANT_NAME, "play", "on", "spotify", "music", "song"]).strip()
@@ -316,6 +290,9 @@ def searchGoogle(query):
     url = f"https://www.google.com/search?q={q.replace(' ', '+')}"
     speak(f"Searching {q} on Google")
     webbrowser.open(url)
+
+#chatbot 
+
 
 # Screenshot
 def takeScreenshot():
@@ -357,8 +334,14 @@ def tellJoke():
     speak(pyjokes.get_joke())
 
 # Weather
+from dotenv import load_dotenv,find_dotenv
+load_dotenv(find_dotenv())
+import requests
 def getWeather(query):
     api_key = os.getenv("WEATHER_API_KEY")
+    if not api_key:
+        speak("Weather API key not found. Please check your .env file.")
+        return
     for word in ["what", "is", "the", "weather", "in", "like", "tell", ASSISTANT_NAME]:
         query = query.replace(word, "")
     city = query.strip() or "Delhi"
@@ -387,6 +370,17 @@ def get_coordinates(location):
     return (loc.latitude, loc.longitude) if loc else (None, None)
 
 # Cab booking
+def listen():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        audio = recognizer.listen(source)
+        try:
+            return recognizer.recognize_google(audio)
+        except sr.UnknownValueError:
+            speak("Sorry, I didn't catch that.")
+        except sr.RequestError:
+            speak("Speech recognition service is unavailable.")
+        return ""
 def book_cab():
     speak("Which platform do you want to use: Ola, Uber, or Rapido?")
     platform = listen().lower()
