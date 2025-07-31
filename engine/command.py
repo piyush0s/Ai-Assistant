@@ -9,10 +9,25 @@ def speak(text):
     voices = engine.getProperty('voices') 
     engine.setProperty('voice', voices[0].id)
     engine.setProperty('rate', 174)
+
+   
     eel.DisplayMessage(text)
+
+    time.sleep(0.5)
+
+    
     engine.say(text)
-    eel.receiverText(text)
     engine.runAndWait()
+
+   
+    time.sleep(0.5)
+    
+    # Now show the response in chat
+    eel.receiverText(text)
+
+    # Hide the SiriWave and show default idle state
+    eel.ShowHood()
+    
 
 def takecommand():
     r = sr.Recognizer()
@@ -99,6 +114,9 @@ def allCommands(message=1):
             from engine.features import getWeather
             city = query.split("in")[-1].strip()
             getWeather(city)
+        elif "shut down" or "shutdown" or "power off" or "bye bye" or "bye-bye" or "bye" in query:
+            from engine.features import shutdown
+            shutdown()
 
         elif "news" in query:
             from engine.features import getNews

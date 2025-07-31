@@ -148,7 +148,13 @@ def findContact(query):
     except:
         speak('not exist in contacts')
         return 0, 0
-    
+
+def shutdown():
+    import sys
+    speak("ok bye we will meet again")
+    eel.close_window()
+    sys.exit(0)
+
 def whatsApp(mobile_no, message, flag, name):
     import time
     import pyautogui

@@ -117,6 +117,13 @@ $(document).ready(function () {
     });
 
 
+    // to shutdown the jarvis 
+    $("#ShutdownJarvis").click(function () {
+    eel.shutdown_jarvis()
+});
+
+
+
 
 
 });
