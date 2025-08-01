@@ -116,6 +116,24 @@ $(document).ready(function () {
         }
     });
 
+    $("#SettingsBtn").click(function () {
+    $("#faceRegisterModal").modal("show");
+});
+
+$("#startCaptureBtn").click(function () {
+    const name = $("#personName").val().trim();
+    if (name === "") {
+        alert("Please enter a name.");
+        return;
+    }
+
+    eel.capture_face_for_training(name)(function (response) {
+        alert(response);
+        $("#faceRegisterModal").modal("hide");
+    });
+});
+
+
 
     // to shutdown the jarvis 
     $("#ShutdownJarvis").click(function () {

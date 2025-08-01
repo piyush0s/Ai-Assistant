@@ -10,7 +10,7 @@ import string
 import datetime
 import socket
 import urllib.parse
-
+from pipes import quote
 import requests
 import pyttsx3
 import pyautogui
@@ -155,62 +155,48 @@ def shutdown():
     eel.close_window()
     sys.exit(0)
 
-def whatsApp(mobile_no, message, flag, name):
-    import time
-    import pyautogui
-    
-    jarvis_message = {
-        'message': f"Message sent successfully to {name}",
-        'call': f"Calling {name}",
-        'video': f"Starting video call with {name}"
-    }.get(flag, "Action completed")
+import pyautogui
+import time
 
-    try:
-        speak(f"Opening WhatsApp for {name}")
-        
-        # Use Ctrl+F to search (more reliable)
-        pyautogui.hotkey('ctrl', 'f')
-        time.sleep(0.5)
-        
-        # Clear search and type name
-        pyautogui.hotkey('ctrl', 'a')
-        pyautogui.write(name)
-        time.sleep(1)
-        pyautogui.press('enter')  # Select contact
-        time.sleep(1)
-        
-        if flag == 'message':
-            # Press Tab to go to message input (usually 1-2 tabs from search)
-            pyautogui.press('tab')  # Move to chat area
-            time.sleep(0.2)
-            pyautogui.press('tab')  # Move to message input
-            time.sleep(0.2)
-            
-            pyautogui.write(message)
-            pyautogui.press('enter')
-            speak(jarvis_message)
-            
-        elif flag == 'call':
-            # Navigate to call button (usually Shift+Tab from message input)
-            pyautogui.hotkey('shift', 'tab')  # Go backwards to header
-            time.sleep(0.2)
-            pyautogui.hotkey('shift', 'tab')
-            time.sleep(0.2)
-            pyautogui.press('enter')  # Click call button
-            speak(jarvis_message)
-            
-        elif flag == 'video':
-            # Navigate to video call button
-            pyautogui.hotkey('shift', 'tab')  # Go to header area
-            time.sleep(0.2)
-            pyautogui.press('tab')  # Move to video call
-            time.sleep(0.2)
-            pyautogui.press('enter')
-            speak(jarvis_message)
-            
-    except Exception as e:
-        print(f"Error: {e}")
-        speak(f"Failed to complete WhatsApp {flag}")
+def whatsApp(mobile_no, message, flag, name):
+    # Focus WhatsApp (assuming it's open)
+    pyautogui.hotkey('alt', 'tab')  # Switch to WhatsApp window
+    time.sleep(1)
+
+    # Search for contact (Ctrl+F)
+    pyautogui.hotkey('ctrl', 'f')
+    time.sleep(0.5)
+    pyautogui.write(mobile_no)
+    time.sleep(1)
+    pyautogui.press('enter')
+    time.sleep(1)
+
+    if flag == 'message':
+        # Type and send message
+        pyautogui.write(message)
+        pyautogui.press('enter')
+        jarvis_message = f"Message sent to {name}"
+
+    elif flag == 'call':
+        # Click call button using image recognition
+        call_button = pyautogui.locateOnScreen('engine\\call_icon.png', confidence=0.8)
+        if call_button:
+            pyautogui.click(call_button)
+            jarvis_message = f"Calling {name}"
+        else:
+            jarvis_message = "Call button not found!"
+
+    else:  # Video call
+        # Click video call button using image recognition
+        video_button = pyautogui.locateOnScreen('engine\\video_icon.png', confidence=0.8)
+        if video_button:
+            pyautogui.click(video_button)
+            jarvis_message = f"Starting video call with {name}"
+        else:
+            jarvis_message = "Video call button not found!"
+
+    speak(jarvis_message)
+
 
 # chat bot 
 from groq import Groq

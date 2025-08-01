@@ -114,9 +114,8 @@ def allCommands(message=1):
             from engine.features import getWeather
             city = query.split("in")[-1].strip()
             getWeather(city)
-        elif "shut down" or "shutdown" or "power off" or "bye bye" or "bye-bye" or "bye" in query:
-            from engine.features import shutdown
-            shutdown()
+
+        
 
         elif "news" in query:
             from engine.features import getNews
