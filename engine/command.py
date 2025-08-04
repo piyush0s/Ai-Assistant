@@ -25,38 +25,12 @@ def speak(text):
 
     eel.DisplayMessage(text)
     time.sleep(0.5)
-
-    stop_flag = False  # Flag to control speech
-
-    # Thread to monitor key press
-    def monitor_keys():
-        nonlocal stop_flag
-        while True:
-            if keyboard.is_pressed('enter') or keyboard.is_pressed('space'):
-                stop_flag = True
-                engine.stop()
-                break
-
-    # Thread to speak
-    def speak_text():
-        engine.say(text)
-        engine.runAndWait()
-
-    # Start the key monitoring in background
-    key_thread = threading.Thread(target=monitor_keys, daemon=True)
-    key_thread.start()
-
-    # Start speaking
-    speak_text()
-
+    engine.say(text)
+    engine.runAndWait()
     time.sleep(0.5)
-
-    if not stop_flag:
-        eel.receiverText(text)
-        eel.ShowHood()
-    else:
-        eel.receiverText("🔇 Speech stopped.")
-        eel.ShowHood()
+    eel.receiverText(text)
+    eel.ShowHood()
+      
 
     
 
@@ -108,6 +82,8 @@ def allCommands(message=1):
         elif "play" in query and "spotify" in query:
             from engine.features import playSpotifySong
             playSpotifySong(query)
+        elif "who created you" in query or "who made you" in query:
+            speak("Hi, I am Jarvis. I was created by Piyush Sharma, a BCA student in Baddi University of Emerging science and technologies, baddi. He is passionate about AI and software development.")
 
         elif "create password" in query or "generate password" in query:
             from engine.features import createPassword

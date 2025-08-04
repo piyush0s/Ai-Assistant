@@ -162,102 +162,44 @@ import pyautogui
 import time
 
 def whatsApp(mobile_no, message, flag, name):
-    """
-    Automate WhatsApp actions using image recognition instead of tab navigation
     
-    Args:
-        mobile_no (str): Phone number with country code
-        message (str): Message to send
-        flag (str): 'message', 'call', or 'video'
-        name (str): Contact name for confirmation message
-    """
-    
-    # Define button image paths - store your PNG files in an 'images' folder
-    button_images = {
-        'send': 'engine\\send_icon.png',
-        'call': 'engine\\call_icon.png', 
-        'video': 'engine\\video_icon.png'
-      # if you want to add photo functionality
-    }
-    
-    # Set action-specific parameters
-    if flag == 'send message':
-        target_button = 'send'
-        jarvis_message = f"Message sent successfully to {name}"
-        
-    elif flag == 'phone call':
-        target_button = 'call'
-        message = ''  # No message needed for calls
-        jarvis_message = f"Calling {name}"
-        
-    elif flag == 'video call':
-        target_button = 'video'
-        message = ''  # No message needed for video calls
-        jarvis_message = f"Starting video call with {name}"
-        
-    else:
-        print(f"Invalid flag: {flag}. Use 'message', 'call', or 'video'")
-        return
 
-    try:
-        # Encode the message for URL
-        encoded_message = quote(message)
-        print(f"Encoded message: {encoded_message}")
-        
-        # Construct the WhatsApp URL
-        whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
-        full_command = f'start "" "{whatsapp_url}"'
-        
-        # Open WhatsApp
-        subprocess.run(full_command, shell=True)
-        time.sleep(5)  # Wait for WhatsApp to load
-        
-        # Wait a bit more for the chat to fully load
-        time.sleep(2)
-        
-        # Check if button image file exists
-        button_path = button_images[target_button]
-        if not os.path.exists(button_path):
-            print(f"Button image not found: {button_path}")
-            print("Please ensure you have the required PNG files in the images folder")
-            return
-        
-        # Try to locate and click the button
-        button_location = None
-        max_attempts = 10
-        
-        for attempt in range(max_attempts):
-            try:
-                button_location = pyautogui.locateOnScreen(button_path, confidence=0.8)
-                if button_location:
-                    break
-            except pyautogui.ImageNotFoundException:
-                pass
-            
-            time.sleep(1)  # Wait 1 second between attempts
-            print(f"Attempt {attempt + 1}: Looking for {target_button} button...")
-        
-        if button_location:
-            # Click the button
-            button_center = pyautogui.center(button_location)
-            pyautogui.click(button_center)
-            print(f"Successfully clicked {target_button} button")
-            
-            # Call the speak function (assuming it exists)
-            try:
-                speak(jarvis_message)
-            except NameError:
-                print(jarvis_message)  # Fallback if speak function not available
-                
-        else:
-            print(f"Could not find {target_button} button after {max_attempts} attempts")
-            print("Please check if:")
-            print("1. WhatsApp is properly loaded")
-            print("2. The button image PNG matches the current WhatsApp interface")
-            print("3. The chat window is visible and active")
-            
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    if flag == 'message':
+        target_tab = 1
+        jarvis_message = "message send successfully to "+name
+
+    elif flag == 'call':
+        target_tab = 11
+        message = ''
+        jarvis_message = "calling to "+name
+
+    else:
+        target_tab = 10
+        message = ''
+        jarvis_message = "staring video call with "+name
+
+
+    # Encode the message for URL
+    encoded_message = quote(message)
+    print(encoded_message)
+    # Construct the URL
+    whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
+
+    # Construct the full command
+    full_command = f'start "" "{whatsapp_url}"'
+
+    # Open WhatsApp with the constructed URL using cmd.exe
+    subprocess.run(full_command, shell=True)
+    time.sleep(5)
+    subprocess.run(full_command, shell=True)
+    
+    pyautogui.hotkey('ctrl', 'f')
+
+    for i in range(1, target_tab):
+        pyautogui.hotkey('tab')
+
+    pyautogui.hotkey('enter')
+    speak(jarvis_message)
 
 # chat bot 
 from groq import Groq

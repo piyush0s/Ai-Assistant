@@ -137,7 +137,7 @@ $("#startCaptureBtn").click(function () {
 
     // to shutdown the jarvis 
     $("#ShutdownJarvis").click(function () {
-    eel.shutdown_jarvis()
+    eel.shutdown_jarvis();
 });
 
 
