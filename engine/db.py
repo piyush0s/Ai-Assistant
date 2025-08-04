@@ -1,116 +1,172 @@
 import sqlite3
+import os
 
-# Connect to your SQLite DB (it will create one if not exists)
-conn = sqlite3.connect("jarvis.db")
+# Create/Open database
+conn = sqlite3.connect('jarvis.db')
 cursor = conn.cursor()
 
-# Create tables if they don't exist
+# Create sys_command table
 cursor.execute('''
-    CREATE TABLE IF NOT EXISTS sys_command (
-        name TEXT PRIMARY KEY,
-        path TEXT NOT NULL
-    )
+CREATE TABLE IF NOT EXISTS sys_command (
+    name TEXT UNIQUE,
+    path TEXT
+)
 ''')
 
+# Create web_command table
 cursor.execute('''
-    CREATE TABLE IF NOT EXISTS web_command (
-        name TEXT PRIMARY KEY,
-        url TEXT NOT NULL
-    )
+CREATE TABLE IF NOT EXISTS web_command (
+    name TEXT UNIQUE,
+    url TEXT
+)
 ''')
 
-# List of system apps (name, path)
-sys_apps = [
-    ('chrome', r'C:\Program Files\Google\Chrome\Application\chrome.exe'),
-    ('edge', r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'),
-    ('notepad', r'C:\Windows\system32\notepad.exe'),
-    ('calculator', r'C:\Windows\System32\calc.exe'),
-    ('paint', r'C:\Windows\system32\mspaint.exe'),
-    ('word', r'C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE'),
-    ('excel', r'C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE'),
-    ('powerpoint', r'C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE'),
-    ('vlc', r'C:\Program Files\VideoLAN\VLC\vlc.exe'),
-    ('cmd', r'C:\Windows\System32\cmd.exe'),
-    ('control panel', r'C:\Windows\System32\control.exe'),
-    ('task manager', r'C:\Windows\System32\Taskmgr.exe'),
-    ('settings', r'C:\Windows\System32\djoin.exe'),
-    ('explorer', r'C:\Windows\explorer.exe'),
-    ('snipping tool', r'C:\Windows\System32\SnippingTool.exe'),
-    ('obs', r'C:\Program Files\obs-studio\bin\64bit\obs64.exe'),
-    ('visual studio code', r'C:\Users\Piyush sharma\AppData\Local\Programs\Microsoft VS Code\Code.exe'),
-    ('pycharm', r'C:\Program Files\JetBrains\PyCharm Community Edition 2023.1\bin\pycharm64.exe'),
-    ('android studio', r'C:\Program Files\Android\Android Studio\bin\studio64.exe'),
-    ('xampp', r'C:\xampp\xampp-control.exe'),
-    ('mysql', r'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe'),
-    ('spotify', r'C:\Users\Piyush sharma\AppData\Roaming\Spotify\Spotify.exe'),
-    ('discord', r'C:\Users\Piyush sharma\AppData\Local\Discord\Update.exe'),
-    ('steam', r'C:\Program Files (x86)\Steam\Steam.exe'),
-    ('epic games', r'C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe')
-    # Add up to 50 as needed
-]
+apps = {
+    "whatsapp": "start whatsapp:",
+    "spotify": "start spotify:",
+    "camera": "start microsoft.windows.camera:",
+    "calculator": "start calculator:",
+    "calendar": "start outlookcal:",
+    "mail": "start outlookmail:",
+    "maps": "start bingmaps:",
+    "photos": "start ms-photos:",
+    "weather": "start bingweather:",
+    "store": "start ms-windows-store:",
+    "paint": "mspaint",
+    "notepad": "notepad",
+    "cmd": "cmd",
+    "powershell": "powershell",
+    "file explorer": "explorer",
+    "task manager": "taskmgr",
+    "control panel": "control",
+    "vs code": r"C:\Users\Piyush sharma\AppData\Local\Programs\Microsoft VS Code\Code.exe",  # change path if needed
+    "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",  # or path to your browser
+    "edge": "start msedge",
+    "youtube": "start msedge https://www.youtube.com",
+    "google": "start msedge https://www.google.com",
+    "github": "start msedge https://github.com",
+    "stackoverflow": "start msedge https://stackoverflow.com",
+    "gmail": "start msedge https://mail.google.com",
+    "instagram": "start msedge https://www.instagram.com",
+    "twitter": "start msedge https://twitter.com",
+    "facebook": "start msedge https://www.facebook.com",
+    "linkedin": "start msedge https://www.linkedin.com",
+    "netflix": "start msedge https://www.netflix.com",
+    "amazon": "start msedge https://www.amazon.in",
+    "flipkart": "start msedge https://www.flipkart.com",
+    "paytm": "start msedge https://www.paytm.com"
+}
 
-# List of websites (name, url)
-websites = [
-    ('google', 'https://www.google.com'),
-    ('youtube', 'https://www.youtube.com'),
-    ('facebook', 'https://www.facebook.com'),
-    ('twitter', 'https://www.twitter.com'),
-    ('instagram', 'https://www.instagram.com'),
-    ('github', 'https://www.github.com'),
-    ('stackoverflow', 'https://stackoverflow.com'),
-    ('linkedin', 'https://www.linkedin.com'),
-    ('gmail', 'https://mail.google.com'),
-    ('amazon', 'https://www.amazon.in'),
-    ('flipkart', 'https://www.flipkart.com'),
-    ('netflix', 'https://www.netflix.com'),
-    ('chatgpt', 'https://chat.openai.com'),
-    ('wikipedia', 'https://www.wikipedia.org'),
-    ('quora', 'https://www.quora.com'),
-    ('zomato', 'https://www.zomato.com'),
-    ('swiggy', 'https://www.swiggy.com'),
-    ('udemy', 'https://www.udemy.com'),
-    ('coursera', 'https://www.coursera.org'),
-    ('edx', 'https://www.edx.org'),
-    ('canva', 'https://www.canva.com'),
-    ('notion', 'https://www.notion.so'),
-    ('figma', 'https://www.figma.com'),
-    ('codeforces', 'https://codeforces.com'),
-    ('leetcode', 'https://leetcode.com'),
-    ('hackerrank', 'https://www.hackerrank.com'),
-    ('geeksforgeeks', 'https://www.geeksforgeeks.org'),
-    ('irctc', 'https://www.irctc.co.in'),
-    ('snapdeal', 'https://www.snapdeal.com'),
-    ('ajio', 'https://www.ajio.com'),
-    ('myntra', 'https://www.myntra.com'),
-    ('cricbuzz', 'https://www.cricbuzz.com'),
-    ('espncricinfo', 'https://www.espncricinfo.com'),
-    ('weather', 'https://www.weather.com'),
-    ('ndtv', 'https://www.ndtv.com'),
-    ('timesofindia', 'https://timesofindia.indiatimes.com'),
-    ('hindustantimes', 'https://www.hindustantimes.com'),
-    ('indianexpress', 'https://indianexpress.com'),
-    ('jiosaavn', 'https://www.jiosaavn.com'),
-    ('gaana', 'https://gaana.com'),
-    ('spotifyweb', 'https://open.spotify.com'),
-    ('soundcloud', 'https://soundcloud.com'),
-    ('telegramweb', 'https://web.telegram.org'),
-    ('whatsappweb', 'https://web.whatsapp.com'),
-    ('duckduckgo', 'https://duckduckgo.com'),
-    ('bing', 'https://www.bing.com'),
-    ('yahoo', 'https://www.yahoo.com'),
-    ('fliphtml5', 'https://fliphtml5.com'),
-    ('pinterest', 'https://www.pinterest.com'),
-    ('redbus', 'https://www.redbus.in'),
-    ('makemytrip', 'https://www.makemytrip.com')
-    # Add up to 100 as needed
-]
 
-# Insert data
-cursor.executemany('INSERT OR IGNORE INTO sys_command (name, path) VALUES (?, ?)', sys_apps)
-cursor.executemany('INSERT OR IGNORE INTO web_command (name, url) VALUES (?, ?)', websites)
+# Top websites
+# websites = {
+#     "google": "https://www.google.com",
+#     "youtube": "https://www.youtube.com",
+#     "github": "https://github.com",
+#     "stackoverflow": "https://stackoverflow.com",
+#     "gmail": "https://mail.google.com",
+#     "instagram": "https://www.instagram.com",
+#     "twitter": "https://twitter.com",
+#     "facebook": "https://www.facebook.com",
+#     "linkedin": "https://www.linkedin.com",
+#     "netflix": "https://www.netflix.com",
+#     "amazon": "https://www.amazon.in",
+#     "flipkart": "https://www.flipkart.com",
+#     "paytm": "https://www.paytm.com",
+#     "phonepe": "https://www.phonepe.com",
+#     "canva": "https://www.canva.com",
+#     "zomato": "https://www.zomato.com",
+#     "swiggy": "https://www.swiggy.com",
+#     "bookmyshow": "https://in.bookmyshow.com",
+#     "snapchat": "https://web.snapchat.com",
+#     "uber": "https://www.uber.com/in/en/",
+#     "ola": "https://www.olacabs.com",
+#     "irctc": "https://www.irctc.co.in",
+#     "makemytrip": "https://www.makemytrip.com",
+#     "chatgpt": "https://chat.openai.com",
+#     "bing": "https://www.bing.com",
+#     "duckduckgo": "https://www.duckduckgo.com",
+#     "reddit": "https://www.reddit.com",
+#      "youtube": "https://www.youtube.com",
+#     "google": "https://www.google.com",
+#     "gmail": "https://mail.google.com",
+#     "facebook": "https://www.facebook.com",
+#     "instagram": "https://www.instagram.com",
+#     "twitter": "https://twitter.com",
+#     "linkedin": "https://www.linkedin.com",
+#     "whatsapp": "https://web.whatsapp.com",
+#     "github": "https://github.com",
+#     "stackoverflow": "https://stackoverflow.com",
+#     "chatgpt": "https://chat.openai.com",
+#     "netflix": "https://www.netflix.com",
+#     "amazon": "https://www.amazon.in",
+#     "flipkart": "https://www.flipkart.com",
+#     "snapdeal": "https://www.snapdeal.com",
+#     "zomato": "https://www.zomato.com",
+#     "swiggy": "https://www.swiggy.com",
+#     "hotstar": "https://www.hotstar.com",
+#     "spotify": "https://open.spotify.com",
+#     "gaana": "https://gaana.com",
+#     "jiosaavn": "https://www.jiosaavn.com",
+#     "google maps": "https://maps.google.com",
+#     "bing": "https://www.bing.com",
+#     "duckduckgo": "https://duckduckgo.com",
+#     "udemy": "https://www.udemy.com",
+#     "coursera": "https://www.coursera.org",
+#     "edx": "https://www.edx.org",
+#     "khan academy": "https://www.khanacademy.org",
+#     "wikipedia": "https://www.wikipedia.org",
+#     "quora": "https://www.quora.com",
+#     "reddit": "https://www.reddit.com",
+#     "amazon prime": "https://www.primevideo.com",
+#     "pinterest": "https://www.pinterest.com",
+#     "cricbuzz": "https://www.cricbuzz.com",
+#     "espn cricinfo": "https://www.espncricinfo.com",
+#     "irctc": "https://www.irctc.co.in",
+#     "bookmyshow": "https://in.bookmyshow.com",
+#     "makemytrip": "https://www.makemytrip.com",
+#     "goibibo": "https://www.goibibo.com",
+#     "yatra": "https://www.yatra.com",
+#     "redbus": "https://www.redbus.in",
+#     "cleartrip": "https://www.cleartrip.com",
+#     "airbnb": "https://www.airbnb.co.in",
+#     "ola": "https://www.olacabs.com",
+#     "uber": "https://www.uber.com",
+#     "canva": "https://www.canva.com",
+#     "pixabay": "https://pixabay.com",
+#     "pexels": "https://www.pexels.com",
+#     "unsplash": "https://unsplash.com",
+#     "chatpdf": "https://www.chatpdf.com",
+#     "dribble": "https://dribbble.com",
+#     "behance": "https://www.behance.net",
+#     "github pages": "https://pages.github.com",
+#     "replit": "https://replit.com",
+#     "codesandbox": "https://codesandbox.io",
+#     "jsfiddle": "https://jsfiddle.net",
+#     "codepen": "https://codepen.io",
+#     "notion": "https://www.notion.so",
+#     "figma": "https://www.figma.com",
+#     "cloudflare": "https://www.cloudflare.com",
+#     "firebase": "https://console.firebase.google.com",
+#     "vercel": "https://vercel.com",
+#     "netlify": "https://www.netlify.com",
+#     "vscode online": "https://vscode.dev",
+#     "weather": "https://www.weather.com",
+#     "news": "https://news.google.com",
+#     "tradingview": "https://www.tradingview.com",
+#     "coinmarketcap": "https://coinmarketcap.com",
+#     "wazirx": "https://wazirx.com",
+#     "binance": "https://www.binance.com",
+# }
 
-# Commit and close
+# # Insert websites
+# for name, url in websites.items():
+#     try:
+#         cursor.execute("INSERT OR IGNORE INTO web_command (name, url) VALUES (?, ?)", (name, url))
+#     except Exception as e:
+#         print(f"Error inserting website {name}: {e}")
+
+# Save and close
 conn.commit()
 conn.close()
-
-print("✅ Data inserted successfully.")
+print("✅ Database setup complete with system apps and websites.")

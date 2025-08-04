@@ -2,6 +2,13 @@ import pyttsx3
 import speech_recognition as sr
 import eel
 import time
+from engine.mobile_command import handle_mobile_command
+
+def jarvisCommand(query):
+    # your other commands...
+
+    if any(kw in query for kw in ["on mobile", "in mobile", "phone"]):
+        handle_mobile_command(query)
 
 def speak(text):
     text = str(text)
@@ -77,6 +84,10 @@ def allCommands(message=1):
         elif "create password" in query or "generate password" in query:
             from engine.features import createPassword
             createPassword()
+            
+        elif "what can you do" in query or "list your features" in query:
+            speak("Here are some things I can do: open apps, play music, search Google or YouTube, tell jokes, check weather, take screenshots, book cabs, send messages and much more.")
+
 
         elif "search" in query and "on google" in query:
             from engine.features import searchGoogle

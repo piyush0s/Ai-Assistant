@@ -23,7 +23,7 @@ import pvporcupine
 from playsound import playsound
 from geopy.geocoders import Nominatim
 import pywhatkit as kit
-
+from engine.mobile import ADBPhoneController
 import os
 from engine.helper import extract_yt_term, remove_words
 from engine.command import speak
@@ -47,38 +47,41 @@ def playAssistantSound():
 def openCommand(query):
     query = query.replace(ASSISTANT_NAME, "")
     query = query.replace("open", "")
-    query.lower()
-
-    app_name = query.strip()
+    query = query.lower().strip()
+    app_name = query
 
     if app_name != "":
-
         try:
-            cursor.execute(
-                'SELECT path FROM sys_command WHERE name IN (?)', (app_name,))
+            # Check in system file command DB
+            cursor.execute('SELECT path FROM sys_command WHERE name = ?', (app_name,))
             results = cursor.fetchall()
 
-            if len(results) != 0:
-                speak("Opening "+query)
-                os.startfile(results[0][0])
-
-            elif len(results) == 0: 
-                cursor.execute(
-                'SELECT url FROM web_command WHERE name IN (?)', (app_name,))
-                results = cursor.fetchall()
-                
-                if len(results) != 0:
-                    speak("Opening "+query)
-                    webbrowser.open(results[0][0])
-
+            if results:
+                path = results[0][0]
+                if path.endswith(".exe") and os.path.exists(path):
+                    speak("Opening " + app_name)
+                    os.startfile(path)
                 else:
-                    speak("Opening "+query)
-                    try:
-                        os.system('start '+query)
-                    except:
-                        speak("not found")
-        except:
-            speak("some thing went wrong")
+                    # It might be a system protocol like "start calculator:"
+                    speak("Opening " + app_name)
+                    os.system(f'start {path}')
+            else:
+                # Check in web commands
+                cursor.execute('SELECT url FROM web_command WHERE name = ?', (app_name,))
+                results = cursor.fetchall()
+
+                if results:
+                    speak("Opening " + app_name)
+                    webbrowser.open(results[0][0])
+                else:
+                    # Fallback for system apps like "start whatsapp:"
+                    speak("Opening " + app_name)
+                    os.system(f'start {app_name}:')
+        except Exception as e:
+            speak("Something went wrong")
+            print("Error:", e)
+
+
 
        
 
@@ -159,44 +162,102 @@ import pyautogui
 import time
 
 def whatsApp(mobile_no, message, flag, name):
-    # Focus WhatsApp (assuming it's open)
-    pyautogui.hotkey('alt', 'tab')  # Switch to WhatsApp window
-    time.sleep(1)
-
-    # Search for contact (Ctrl+F)
-    pyautogui.hotkey('ctrl', 'f')
-    time.sleep(0.5)
-    pyautogui.write(mobile_no)
-    time.sleep(1)
-    pyautogui.press('enter')
-    time.sleep(1)
-
+    """
+    Automate WhatsApp actions using image recognition instead of tab navigation
+    
+    Args:
+        mobile_no (str): Phone number with country code
+        message (str): Message to send
+        flag (str): 'message', 'call', or 'video'
+        name (str): Contact name for confirmation message
+    """
+    
+    # Define button image paths - store your PNG files in an 'images' folder
+    button_images = {
+        'send': 'engine\\send_icon.png',
+        'call': 'engine\\call_icon.png', 
+        'video': 'engine\\video_icon.png'
+      # if you want to add photo functionality
+    }
+    
+    # Set action-specific parameters
     if flag == 'message':
-        # Type and send message
-        pyautogui.write(message)
-        pyautogui.press('enter')
-        jarvis_message = f"Message sent to {name}"
-
+        target_button = 'send'
+        jarvis_message = f"Message sent successfully to {name}"
+        
     elif flag == 'call':
-        # Click call button using image recognition
-        call_button = pyautogui.locateOnScreen('engine\\call_icon.png', confidence=0.8)
-        if call_button:
-            pyautogui.click(call_button)
-            jarvis_message = f"Calling {name}"
+        target_button = 'call'
+        message = ''  # No message needed for calls
+        jarvis_message = f"Calling {name}"
+        
+    elif flag == 'video':
+        target_button = 'video'
+        message = ''  # No message needed for video calls
+        jarvis_message = f"Starting video call with {name}"
+        
+    else:
+        print(f"Invalid flag: {flag}. Use 'message', 'call', or 'video'")
+        return
+
+    try:
+        # Encode the message for URL
+        encoded_message = quote(message)
+        print(f"Encoded message: {encoded_message}")
+        
+        # Construct the WhatsApp URL
+        whatsapp_url = f"whatsapp://send?phone={mobile_no}&text={encoded_message}"
+        full_command = f'start "" "{whatsapp_url}"'
+        
+        # Open WhatsApp
+        subprocess.run(full_command, shell=True)
+        time.sleep(5)  # Wait for WhatsApp to load
+        
+        # Wait a bit more for the chat to fully load
+        time.sleep(2)
+        
+        # Check if button image file exists
+        button_path = button_images[target_button]
+        if not os.path.exists(button_path):
+            print(f"Button image not found: {button_path}")
+            print("Please ensure you have the required PNG files in the images folder")
+            return
+        
+        # Try to locate and click the button
+        button_location = None
+        max_attempts = 10
+        
+        for attempt in range(max_attempts):
+            try:
+                button_location = pyautogui.locateOnScreen(button_path, confidence=0.8)
+                if button_location:
+                    break
+            except pyautogui.ImageNotFoundException:
+                pass
+            
+            time.sleep(1)  # Wait 1 second between attempts
+            print(f"Attempt {attempt + 1}: Looking for {target_button} button...")
+        
+        if button_location:
+            # Click the button
+            button_center = pyautogui.center(button_location)
+            pyautogui.click(button_center)
+            print(f"Successfully clicked {target_button} button")
+            
+            # Call the speak function (assuming it exists)
+            try:
+                speak(jarvis_message)
+            except NameError:
+                print(jarvis_message)  # Fallback if speak function not available
+                
         else:
-            jarvis_message = "Call button not found!"
-
-    else:  # Video call
-        # Click video call button using image recognition
-        video_button = pyautogui.locateOnScreen('engine\\video_icon.png', confidence=0.8)
-        if video_button:
-            pyautogui.click(video_button)
-            jarvis_message = f"Starting video call with {name}"
-        else:
-            jarvis_message = "Video call button not found!"
-
-    speak(jarvis_message)
-
+            print(f"Could not find {target_button} button after {max_attempts} attempts")
+            print("Please check if:")
+            print("1. WhatsApp is properly loaded")
+            print("2. The button image PNG matches the current WhatsApp interface")
+            print("3. The chat window is visible and active")
+            
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
 
 # chat bot 
 from groq import Groq
@@ -400,3 +461,6 @@ def book_cab():
 
     speak(f"Opening {platform} booking page for you.")
     webbrowser.open(url)
+
+
+    
