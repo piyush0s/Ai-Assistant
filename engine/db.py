@@ -56,7 +56,11 @@ apps = {
     "flipkart": "start msedge https://www.flipkart.com",
     "paytm": "start msedge https://www.paytm.com"
 }
-
+for name, path in apps.items():
+    try:
+        cursor.execute("INSERT OR IGNORE INTO sys_command (name, path) VALUES (?, ?)", (name, path))
+    except Exception as e:
+        print(f"Error inserting website {name}: {e}")
 
 # Top websites
 # websites = {

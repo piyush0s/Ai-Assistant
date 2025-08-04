@@ -10,6 +10,12 @@ def jarvisCommand(query):
     if any(kw in query for kw in ["on mobile", "in mobile", "phone"]):
         handle_mobile_command(query)
 
+import pyttsx3
+import threading
+import keyboard
+import time
+import eel
+
 def speak(text):
     text = str(text)
     engine = pyttsx3.init('sapi5')
@@ -17,23 +23,41 @@ def speak(text):
     engine.setProperty('voice', voices[0].id)
     engine.setProperty('rate', 174)
 
-   
     eel.DisplayMessage(text)
+    time.sleep(0.5)
+
+    stop_flag = False  # Flag to control speech
+
+    # Thread to monitor key press
+    def monitor_keys():
+        nonlocal stop_flag
+        while True:
+            if keyboard.is_pressed('enter') or keyboard.is_pressed('space'):
+                stop_flag = True
+                engine.stop()
+                break
+
+    # Thread to speak
+    def speak_text():
+        engine.say(text)
+        engine.runAndWait()
+
+    # Start the key monitoring in background
+    key_thread = threading.Thread(target=monitor_keys, daemon=True)
+    key_thread.start()
+
+    # Start speaking
+    speak_text()
 
     time.sleep(0.5)
 
-    
-    engine.say(text)
-    engine.runAndWait()
+    if not stop_flag:
+        eel.receiverText(text)
+        eel.ShowHood()
+    else:
+        eel.receiverText("🔇 Speech stopped.")
+        eel.ShowHood()
 
-   
-    time.sleep(0.5)
-    
-    # Now show the response in chat
-    eel.receiverText(text)
-
-    # Hide the SiriWave and show default idle state
-    eel.ShowHood()
     
 
 def takecommand():
@@ -76,6 +100,10 @@ def allCommands(message=1):
         elif "on youtube" in query:
             from engine.features import PlayYoutube
             PlayYoutube(query)
+            
+        elif "turn off" in query or "shutdown" in query:
+            from engine.features import shutdown_jarvis
+            shutdown_jarvis()
 
         elif "play" in query and "spotify" in query:
             from engine.features import playSpotifySong

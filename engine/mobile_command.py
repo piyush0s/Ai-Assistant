@@ -1,11 +1,12 @@
 # engine/mobile_commands.py
 
 from engine.mobile import ADBPhoneController
-from command import speak
+
 
 controller = ADBPhoneController()
 
 def handle_mobile_command(query: str):
+    from engine.command import speak
     if "open camera" in query:
         controller.open_camera()
         speak("Camera opened on mobile.")

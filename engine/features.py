@@ -152,7 +152,7 @@ def findContact(query):
         speak('not exist in contacts')
         return 0, 0
 
-def shutdown():
+def shutdown_jarvis():
     import sys
     speak("ok bye we will meet again")
     eel.close_window()
@@ -181,16 +181,16 @@ def whatsApp(mobile_no, message, flag, name):
     }
     
     # Set action-specific parameters
-    if flag == 'message':
+    if flag == 'send message':
         target_button = 'send'
         jarvis_message = f"Message sent successfully to {name}"
         
-    elif flag == 'call':
+    elif flag == 'phone call':
         target_button = 'call'
         message = ''  # No message needed for calls
         jarvis_message = f"Calling {name}"
         
-    elif flag == 'video':
+    elif flag == 'video call':
         target_button = 'video'
         message = ''  # No message needed for video calls
         jarvis_message = f"Starting video call with {name}"
