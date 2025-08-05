@@ -55,11 +55,11 @@ apps = {
     "amazon": "start msedge https://www.amazon.in",
     "flipkart": "start msedge https://www.flipkart.com",
     "paytm": "start msedge https://www.paytm.com",
-    "excel": "start excel:",
-    "word": "start winword:",
-    "powerpoint": "start powerpnt:",
-    "onedrive": "start onedrive:",
-    "zoom": "start zoom:",  # Ensure Zoom is installed
+    "excel": "start excel",
+    "word": "start winword",
+    "powerpoint": "start powerpnt",
+    "onedrive": "start onedrive",
+    "zoom": "start zoom",  # Ensure Zoom is installed
     "teams": "start teams:",  # Ensure Microsoft Teams is installed
     "slack": "start slack:",  # Ensure Slack is installed
     "discord": "start discord:",  # Ensure Discord is installed
@@ -76,8 +76,10 @@ apps = {
     "clock": "start ms-clock:",  # Windows Clock app
     "alarm": "start ms-clock:",  # Windows Alarm app
     "news": "start ms-news:",  # Windows News app
-    "weather": "start ms-weather:",  # Windows Weather app
-
+    "weather": "start ms-weather:",  
+    # Windows Weather app
+    
+    "onenote": "start onenote:",  # Windows OneNote app
     "photos": "start ms-photos:",  # Windows Photos app
     "calculator": "start calculator:",  # Windows Calculator app
     "snipping tool": "start snippingtool:",  # Windows Snipping Tool
