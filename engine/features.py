@@ -165,7 +165,7 @@ def whatsApp(mobile_no, message, flag, name):
     
 
     if flag == 'message':
-        target_tab = 2
+        target_tab = 3
         jarvis_message = "message send successfully to "+name
 
     elif flag == 'call':

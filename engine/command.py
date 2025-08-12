@@ -11,8 +11,7 @@ def jarvisCommand(query):
         handle_mobile_command(query)
 
 import pyttsx3
-import threading
-import keyboard
+
 import time
 import eel
 

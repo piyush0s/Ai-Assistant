@@ -87,10 +87,10 @@ apps = {
     "microsoft edge": "start msedge:",  # Microsoft Edge browser
     "microsoft store": "start ms-windows-store:",  # Microsoft Store app
     "microsoft teams": "start teams:",  # Microsoft Teams app
-    "microsoft word": "start winword:",  # Microsoft Word app
-    "microsoft excel": "start excel:",  # Microsoft Excel app
-    "microsoft powerpoint": "start powerpnt:",  # Microsoft PowerPoint app
-    "microsoft onenote": "start onenote:",  # Microsoft OneNote
+    "microsoft word": "start winword",  # Microsoft Word app
+    "microsoft excel": "start excel",  # Microsoft Excel app
+    "microsoft powerpoint": "start powerpnt",  # Microsoft PowerPoint app
+    "microsoft onenote": "start onenote",  # Microsoft OneNote
     "microsoft outlook": "start outlook:",  # Microsoft Outlook app
     "microsoft publisher": "start mspub:",  # Microsoft Publisher app
 
